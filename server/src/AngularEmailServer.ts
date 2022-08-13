@@ -1,29 +1,48 @@
 import {Express, Request, Response} from "express";
-import * as bodyParser from "body-parser";
+import {json} from "body-parser";
+import {default as fetch} from "node-fetch";
 
-export abstract class AngularEmailServer {
-    private app: Express;
-    private readonly dataMap = new Map<number, any>();
-    private currentId = 0;
+export class AngularEmailServer {
+    private readonly app: Express;
+    private static readonly dataMap = new Map<number, any>();
+    private static currentId = 0;
+    private static readonly port = 4000;
 
-    protected constructor(app: Express) {
+    constructor(app: Express) {
         this.app = app;
-        this.setupRoutes();
+
+        app.listen(AngularEmailServer.port, () => {
+            console.log(`Node Express server listening on http://localhost:${AngularEmailServer.port}`);
+        });
     }
 
-    setupRoutes() {
-        this.app.use(bodyParser);
-        this.app.post('/get-data', (req, res) => this.getData(req, res));
-        this.app.post('/create-email', (req, res) => this.createEmail(req, res));
+    startServer() {
+        AngularEmailServer.setupRoutes(this.app);
+
+        this.app.listen(AngularEmailServer.port, () => {
+            console.log(`Node Express server listening on http://localhost:${AngularEmailServer.port}`);
+        });
+    }
+
+    public static setupRoutes(app: Express) {
+        app.use(json());
+        app.post('/get-data', AngularEmailServer.getData);
+        app.post('/create-email', AngularEmailServer.createEmail);
     }
 
     /**
      * Handle the get data request. This will return the data from the dataMap.
+     *
+     * Example request body:
+     *
+     * {
+     *     "id": 25
+     * }
      * @param req The request. The body must be in JSON format and contain the id.
      * @param res The response.
      * @private
      */
-    private getData(req: Request, res: Response) {
+    private static getData(req: Request, res: Response) {
         try {
             // Get the id
             const id = req.body.id;
@@ -49,16 +68,37 @@ export abstract class AngularEmailServer {
         }
     }
 
-    private async createEmail(req: Request, res: Response) {
+    /**
+     * Get the html for the email.
+     *
+     * Example request body:
+     *
+     * {
+     *      "path": "/create-email",
+     *      "data": {
+     *          "emailAddress": "test@example.com"
+     *      }
+     * }
+     * @param req The request body must be in JSON format and contain the email path and the data.
+     * @param res The response.
+     * @private
+     */
+    private static async createEmail(req: Request, res: Response) {
         try {
+            // Get the data from the body
             const emailPath = req.body.emailPath;
             const data = req.body.data;
 
+            // Check to see if the data is valid
             if (typeof(emailPath) == 'string' && data) {
-                this.dataMap.set(this.currentId, data);
-                const html = await fetch(`http://localhost:4000${emailPath}/${this.currentId}`);
-                this.currentId++;
-                res.send(await html.text())
+                // Add the data to the data map and get the html from the server
+                AngularEmailServer.dataMap.set(AngularEmailServer.currentId, data);
+                const html = await fetch(`http://localhost:4000${emailPath}/${AngularEmailServer.currentId}`);
+                AngularEmailServer.currentId++;
+
+                // Return the html
+                res.send(await html.text());
+                return;
             }
 
             res.send();
@@ -68,9 +108,7 @@ export abstract class AngularEmailServer {
             console.log(e);
             res.status(500);
             res.send();
+            return;
         }
-        res.send();
     }
-
-    abstract startServer();
 }
