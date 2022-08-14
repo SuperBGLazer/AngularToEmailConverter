@@ -1,6 +1,6 @@
 {
   "name": "@barkhub/angular-to-email-server",
-  "version": "0.0.4-beta-4",
+  "version": "0.0.4-beta-6",
   "description": "",
   "main": "lib/lib.js",
   "module": "lib/lib.esm.js",
@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/chai": "^4.2.22",
     "@types/express": "^4.15.2",
+    "@types/jsdom": "^20.0.0",
     "@types/mocha": "^9.1.1",
     "@types/node": "^16.11.0",
     "chai": "^4.3.4",

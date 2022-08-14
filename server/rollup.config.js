@@ -7,7 +7,7 @@ export default [
             format: 'esm',
         },
         plugins: [typescript()],
-        external: ['express']
+        external: ['express', 'jsdom']
     },
     {
         input: './src/lib.ts',
@@ -16,6 +16,6 @@ export default [
             format: 'cjs',
         },
         plugins: [typescript()],
-        external: ['express']
+        external: ['express', 'jsdom']
     }
 ]

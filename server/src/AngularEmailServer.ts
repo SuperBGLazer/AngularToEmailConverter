@@ -1,6 +1,10 @@
 import {Express, Request, Response} from "express";
 import {json} from "body-parser";
 import {default as fetch} from "node-fetch";
+import {JSDOM} from "jsdom";
+import {NS} from "parse5/dist/common/html";
+
+const BASE_URL = "http://localhost:4000";
 
 export class AngularEmailServer {
     private readonly app: Express;
@@ -93,11 +97,11 @@ export class AngularEmailServer {
             if (typeof(emailPath) == 'string' && data) {
                 // Add the data to the data map and get the html from the server
                 AngularEmailServer.dataMap.set(AngularEmailServer.currentId, data);
-                const html = await fetch(`http://localhost:4000${emailPath}/${AngularEmailServer.currentId}`);
+                const html = await fetch(`${BASE_URL}${emailPath}/${AngularEmailServer.currentId}`);
                 AngularEmailServer.currentId++;
 
                 // Return the html
-                res.send(await html.text());
+                res.send(await AngularEmailServer.stripHtml(await html.text()));
                 return;
             }
 
@@ -110,5 +114,37 @@ export class AngularEmailServer {
             res.send();
             return;
         }
+    }
+
+    public static async stripHtml(html: string): Promise<string> {
+        // Convert the html to a JSDOM Document
+        const dom = new JSDOM(html);
+        const document = dom.window.document;
+
+        // Remove the script tags
+        document.head.querySelectorAll('script').forEach((element) => element.remove());
+        document.body.querySelectorAll('script').forEach((element) => element.remove());
+
+        // Get the CSS
+        const cssURLs = [];
+        const links = document.head.querySelectorAll('link');
+        links.forEach((link) => {
+            if (link.rel === 'stylesheet') {
+                if (link.href) {
+                    cssURLs.push(link.href);
+                }
+            }
+        })
+
+        // Download the CSS
+        for (const url of cssURLs) {
+            const cssResponse = await fetch(`${BASE_URL}/${url}`);
+            document.createElement('script').innerText = await cssResponse.text();
+        }
+
+        // Remove the head
+        document.head.remove();
+
+        return dom.serialize();
     }
 }
