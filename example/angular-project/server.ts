@@ -23,21 +23,29 @@ export function app(): express.Express {
 
   server.set('view engine', 'html');
   server.set('views', distFolder);
+  
 
   // Example Express Rest API endpoints
   // server.get('/api/**', (req, res) => { });
   // Serve static files from /browser
+  
+
   server.get('*.*', express.static(distFolder, {
     maxAge: '1y'
   }));
 
-  AngularEmailServer.setupRoutes(server);
 
   // All regular routes use the Universal engine
   server.get('*', (req, res) => {
     res.render(indexHtml, { req, providers: [{ provide: APP_BASE_HREF, useValue: req.baseUrl }] });
   });
 
+  server.post('/test', (req, res) => {
+    console.log('email');
+  })
+
+  
+  AngularEmailServer.setupRoutes(server);
 
   return server;
 }

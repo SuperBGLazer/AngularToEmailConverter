@@ -1,8 +1,7 @@
 import {Express, Request, Response} from "express";
 import {json} from "body-parser";
 import {default as fetch} from "node-fetch";
-import {JSDOM} from "jsdom";
-import {NS} from "parse5/dist/common/html";
+import * as cheerio from "cheerio";
 
 const BASE_URL = "http://localhost:4000";
 
@@ -117,34 +116,30 @@ export class AngularEmailServer {
     }
 
     public static async stripHtml(html: string): Promise<string> {
-        // Convert the html to a JSDOM Document
-        const dom = new JSDOM(html);
-        const document = dom.window.document;
+        const $ = cheerio.load(html);
+        
 
         // Remove the script tags
-        document.head.querySelectorAll('script').forEach((element) => element.remove());
-        document.body.querySelectorAll('script').forEach((element) => element.remove());
+        $('script').remove();
 
-        // Get the CSS
+        // Get the CSS URLs
         const cssURLs = [];
-        const links = document.head.querySelectorAll('link');
-        links.forEach((link) => {
-            if (link.rel === 'stylesheet') {
-                if (link.href) {
-                    cssURLs.push(link.href);
-                }
+
+        $('link').each((_, tag) => {
+            if (tag.attribs.rel === 'stylesheet') {
+                cssURLs.push(tag.attribs.href);
             }
-        })
+        });
 
         // Download the CSS
         for (const url of cssURLs) {
             const cssResponse = await fetch(`${BASE_URL}/${url}`);
-            document.createElement('script').innerText = await cssResponse.text();
+            $('css').appendTo('body').text(await cssResponse.text());
         }
 
         // Remove the head
-        document.head.remove();
+        $('head').remove();
 
-        return dom.serialize();
+        return $.root().html();
     }
 }
