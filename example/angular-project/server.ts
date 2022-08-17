@@ -23,12 +23,18 @@ export function app(): express.Express {
 
   server.set('view engine', 'html');
   server.set('views', distFolder);
-  
+
 
   // Example Express Rest API endpoints
   // server.get('/api/**', (req, res) => { });
   // Serve static files from /browser
-  
+  server.post('/test', (req, res) => {
+    console.log('email');
+  })
+
+
+  AngularEmailServer.setupRoutes(server);
+
 
   server.get('*.*', express.static(distFolder, {
     maxAge: '1y'
@@ -39,13 +45,6 @@ export function app(): express.Express {
   server.get('*', (req, res) => {
     res.render(indexHtml, { req, providers: [{ provide: APP_BASE_HREF, useValue: req.baseUrl }] });
   });
-
-  server.post('/test', (req, res) => {
-    console.log('email');
-  })
-
-  
-  AngularEmailServer.setupRoutes(server);
 
   return server;
 }

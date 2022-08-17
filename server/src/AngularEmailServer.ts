@@ -123,7 +123,7 @@ export class AngularEmailServer {
         $('script').remove();
 
         // Get the CSS URLs
-        const cssURLs = [];
+        const cssURLs: any[] = [];
 
         $('link').each((_, tag) => {
             if (tag.attribs.rel === 'stylesheet') {
@@ -134,7 +134,7 @@ export class AngularEmailServer {
         // Download the CSS
         for (const url of cssURLs) {
             const cssResponse = await fetch(`${BASE_URL}/${url}`);
-            $('css').appendTo('body').text(await cssResponse.text());
+            $('body').append('css').text(await cssResponse.text());
         }
 
         // Remove the head
