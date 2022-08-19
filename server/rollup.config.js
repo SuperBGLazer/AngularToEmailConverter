@@ -1,4 +1,5 @@
 import typescript from 'rollup-plugin-typescript2'
+const external = []
 export default [
     {
         input: './src/lib.ts',
@@ -7,7 +8,7 @@ export default [
             format: 'esm',
         },
         plugins: [typescript()],
-        external: ['express', 'jsdom']
+        external
     },
     {
         input: './src/lib.ts',
@@ -16,6 +17,6 @@ export default [
             format: 'cjs',
         },
         plugins: [typescript()],
-        external: ['express', 'jsdom']
+        external
     }
 ]

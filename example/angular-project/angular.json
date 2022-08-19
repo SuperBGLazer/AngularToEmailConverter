@@ -136,10 +136,7 @@
               "serverTarget": "example-angular-project:server:production"
             }
           },
-          "defaultConfiguration": "development",
-          "options": {
-            "externalDependencies": ["canvas"]
-          }
+          "defaultConfiguration": "development"
         },
         "prerender": {
           "builder": "@nguniversal/builders:prerender",
