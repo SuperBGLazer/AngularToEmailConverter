@@ -51,11 +51,11 @@ export class AngularEmailServer {
             const id = req.body.id;
 
             // Check if the id exists in the data map
-            if (this.dataMap.has(id)) {
+            if (AngularEmailServer.dataMap.has(id)) {
 
                 // Get the data, delete it, and return it
-                const data = this.dataMap.get(id);
-                this.dataMap.delete(id);
+                const data = AngularEmailServer.dataMap.get(id);
+                AngularEmailServer.dataMap.delete(id);
                 res.send(JSON.stringify(data));
                 return;
             }
@@ -117,13 +117,14 @@ export class AngularEmailServer {
 
     public static async stripHtml(html: string): Promise<string> {
         const $ = cheerio.load(html);
+        const body = $('body');
         
 
         // Remove the script tags
         $('script').remove();
 
         // Get the CSS URLs
-        const cssURLs: any[] = [];
+        const cssURLs = [];
 
         $('link').each((_, tag) => {
             if (tag.attribs.rel === 'stylesheet') {
@@ -134,12 +135,28 @@ export class AngularEmailServer {
         // Download the CSS
         for (const url of cssURLs) {
             const cssResponse = await fetch(`${BASE_URL}/${url}`);
-            $('body').append('css').text(await cssResponse.text());
+            const css = await cssResponse.text();
+            if (css) {
+                body.append(`<css>${css}</css>`);
+            }
         }
+
+        // Move the style tags from the head to the body
+        $('style').each((_, tag) => {
+            if ($(tag).text()) {
+                body.append(tag);
+            }
+        })
 
         // Remove the head
         $('head').remove();
 
-        return $.root().html();
+        // Remove the unneeded angular tags
+        const appRoot = $('app-root');
+        $('router-outlet').remove();
+        body.append(appRoot.children().first().children());
+        appRoot.remove();
+
+        return body.html();
     }
 }
