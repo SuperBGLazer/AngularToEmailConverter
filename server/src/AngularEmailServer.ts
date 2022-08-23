@@ -2,6 +2,7 @@ import {Express, Request, Response} from "express";
 import {json} from "body-parser";
 import {default as fetch} from "node-fetch";
 import * as cheerio from "cheerio";
+const dropcss = require('dropcss');
 
 const BASE_URL = "http://localhost:4000";
 
@@ -116,7 +117,7 @@ export class AngularEmailServer {
     }
 
     public static async stripHtml(html: string): Promise<string> {
-        const $ = cheerio.load(html);
+        let $ = cheerio.load(html);
         const body = $('body');
         
 
@@ -124,27 +125,36 @@ export class AngularEmailServer {
         $('script').remove();
 
         // Get the CSS URLs
-        const cssURLs = [];
+        const cssURLs: string[] = [];
 
         $('link').each((_, tag) => {
             if (tag.attribs.rel === 'stylesheet') {
                 cssURLs.push(tag.attribs.href);
+                $(tag).remove()
             }
         });
 
         // Download the CSS
+        let css = '';
         for (const url of cssURLs) {
-            const cssResponse = await fetch(`${BASE_URL}/${url}`);
-            const css = await cssResponse.text();
-            if (css) {
-                body.append(`<css>${css}</css>`);
+            let cssResponse;
+            console.log(url);
+
+            if (url.includes('https://') || url.includes('http://')) {
+                console.log('url');
+                cssResponse = await fetch(url);
+            } else {
+                cssResponse = await fetch(`${BASE_URL}/${url}`);
             }
+
+            css += await cssResponse.text() + '\n';
         }
 
         // Move the style tags from the head to the body
         $('style').each((_, tag) => {
             if ($(tag).text()) {
-                body.append(tag);
+                css += $(tag).text() + '\n';
+                $(tag).remove();
             }
         })
 
@@ -157,6 +167,11 @@ export class AngularEmailServer {
         body.append(appRoot.children().first().children());
         appRoot.remove();
 
-        return body.html();
+        // Remove the unneeded css
+        const usedCss = dropcss({css, html: body.html()}).css;
+
+        body.append(`<style>${usedCss}</style>`)
+
+        return body.html().trim().replace(/(\r\n|\n|\r)/gm, "");
     }
 }

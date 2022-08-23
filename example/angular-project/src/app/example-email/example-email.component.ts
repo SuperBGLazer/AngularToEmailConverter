@@ -12,6 +12,7 @@ JSONHeader = JSONHeader.append('content-type', 'application/json');
 })
 export class ExampleEmailComponent implements OnInit {
   items: any[] = [];
+  displayedColumns = ['name', 'price'];
 
   constructor(private httpClient: HttpClient, private activatedRoute: ActivatedRoute) { }
 
