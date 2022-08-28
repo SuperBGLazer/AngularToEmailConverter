@@ -138,10 +138,8 @@ export class AngularEmailServer {
         let css = '';
         for (const url of cssURLs) {
             let cssResponse;
-            console.log(url);
 
             if (url.includes('https://') || url.includes('http://')) {
-                console.log('url');
                 cssResponse = await fetch(url);
             } else {
                 cssResponse = await fetch(`${BASE_URL}/${url}`);
@@ -150,7 +148,7 @@ export class AngularEmailServer {
             css += await cssResponse.text() + '\n';
         }
 
-        // Move the style tags from the head to the body
+        // Get the style tag's contents
         $('style').each((_, tag) => {
             if ($(tag).text()) {
                 css += $(tag).text() + '\n';
